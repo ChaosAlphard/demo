@@ -1,5 +1,18 @@
 <template>
-<v-container>
+<v-container class="container">
+  <div id="banner">
+    <v-window v-model="bannerShow" class="banner-window">
+      <v-window-item v-for="item in banner" :key="item.adid" class="ban-win-item">
+        <img :src="item.imageUrl">
+      </v-window-item>
+    </v-window>
+    <div class="banner-dot">
+      <span v-for="(v, i) in banner" :key="i" @click="bannerGoTO(i)"
+      class="dot" :class="{'dot-selected':i===bannerShow}">
+      </span>
+    </div>
+  </div>
+
   <div id="rec-playlist">
 
     <div class="rec-title">
@@ -34,6 +47,9 @@ export default {
   name: 'HomePage',
   data() {
     return {
+      banner: [],
+      bannerShow: 0,
+      bannerTimer: void 0,
       recList: [],
       recNewSong: [],
       recDJ: [],
@@ -42,12 +58,26 @@ export default {
     }
   },
   methods: {
+    bannerAutoPay() {
+      if(this.bannerShow >= this.banner.length-1){
+        this.bannerShow = 0
+      } else {
+        this.bannerShow++
+      }
+    },
+    bannerPlay() {
+      this.bannerTimer = setInterval(this.bannerAutoPay, 10000)
+    },
+    bannerGoTO(bannWin) {
+      this.bannerShow = bannWin
+      clearInterval(this.bannerTimer)
+      this.bannerPlay()
+    },
     getPlayList(id) {
       console.log(id)
     },
     filtePlayCount(count) {
       let res = String(count)
-      
       if(res.indexOf('.') !== -1) {
         res = res.substring(0,res.indexOf('.'))
       }
@@ -56,44 +86,71 @@ export default {
         return `${res}万`
       }
       return res
-    }
+    },
   },
-  created() {
+  beforeMount() {
+    //轮播图
+    axios.get('/api/banner')
+    .then(res => {
+      if(res.data.code===200){
+        this.banner = res.data.banners
+        this.bannerShow = this.banner.length
+      } else {
+        this.snackText = `获取失败, 错误代码${res['data']['code']}`
+        this.snackShow = true
+      }
+    }, err => {
+      this.snackText = `服务异常, ${err}`
+      this.snackShow = true
+    })
+
     //推荐歌单
     axios.get('/api/personalized?limit=10')  // top/playlist?limit=10&order=hot
     .then(res => {
       if(res.data.code===200){
         this.recList = res.data.result
       } else {
-        this.snackText = '获取失败'
+        this.snackText = `获取失败, 错误代码${res['data']['code']}`
         this.snackShow = true
       }
+    }, err => {
+      this.snackText = `服务异常, ${err}`
+      this.snackShow = true
     })
 
     //最新音乐
     axios.get('/api/personalized/newsong')
     .then(res => {
-      console.log("newsong: "+res.data)
+      console.warn(res.data)
       if(res.data.code===200){
         // this.recList = res.data.result
       } else {
-        this.snackText = '获取失败'
+        this.snackText = `获取失败, 错误代码${res['data']['code']}`
         this.snackShow = true
       }
+    }, err => {
+      this.snackText = `服务异常, ${err}`
+      this.snackShow = true
     })
 
     //推荐电台
-    axion.get('/api/personalized/djprogram')
+    axios.get('/api/personalized/djprogram')
     .then(res => {
-      console.log("djprogram"+res.data)
+      console.warn(res.data)
       if(res.data.code===200){
         // this.recList = res.data.result
       } else {
-        this.snackText = '获取失败'
+        this.snackText = `获取失败, 错误代码${res['data']['code']}`
         this.snackShow = true
       }
+    }, err => {
+      this.snackText = `服务异常, ${err}`
+      this.snackShow = true
     })
   },
+  mounted() {
+    this.bannerPlay()
+  }
 }
 </script>
 
@@ -104,9 +161,59 @@ export default {
   justify-content: center;
   align-items: center;
 } */
+.container>div{
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+}
+.container>div:not(#banner){
+  margin-top: 20px;
+}
+#banner{
+  width: 80%;
+  position: relative;
+}
+  .banner-window{
+    margin-left: auto;
+    margin-right: auto;
+    /* width: calc(80vw - 240px); */
+    /* height: calc(40vw - 240px); */
+    width: 80%;
+    height: 0;
+    padding-bottom: 30%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+    .ban-win-item>img {
+      width: 100%;
+      height: 100%;
+    }
+  .banner-dot{
+    position: absolute;
+    bottom: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 36px;
+    z-index: 8;
+  }
+    .dot{
+      width: 16px;
+      height: 16px;
+      box-shadow: 0 0 0 1px #000 inset;
+      background-color: #CCC;
+      border-radius: 16px;
+      margin-left: 5px;
+      margin-right: 5px;
+      cursor: pointer;
+    }
+    .dot-selected,.dot:hover{
+      background-color: #FFF;
+    }
+
 #rec-playlist{
   width:80%;
-  margin: 0 auto;
 }
   .rec-title{
     width: 100%;
@@ -153,4 +260,3 @@ export default {
     align-items: center;
   }
 </style>
-
