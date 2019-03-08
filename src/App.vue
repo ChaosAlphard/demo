@@ -6,7 +6,7 @@
     <LeftContent id="left-content"/>
 
     <div id="right-content">
-      <router-view/>
+      <router-view @playSong="playSong($event)"/>
     </div>
   </div>
 
@@ -34,6 +34,9 @@ export default {
     showTopMsg(msg) {
       this.snackText = msg
       this.snackShow = true
+    },
+    playSong(id){
+      alert(id)
     }
   },
   components: {
